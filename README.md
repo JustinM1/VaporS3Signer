@@ -55,6 +55,7 @@ Here are the names for each region:
 VaporS3Signer makes it extremely easy to generate V4 auth headers and pre-signed URLs by adding an extension to `Droplet`.
 
 #####V4 Auth Headers
+- All required headers for the request are created automatically, with the option to add more for individual use cases. 
 
 ```ruby
 let drop = Droplet()
