@@ -63,8 +63,8 @@ try drop.addProvider(VaporS3Signer.Provider.self)
 
 drop.get("getS3TestImage") { req in
 
-  guard let headers = try drop.s3Signer?.authHeaderV4(httpMethod: .get, urlString: "someS3_URL_String", headers: [:], payload: .none),
-  let url = URL(string: "someS3_URL_String") else { throw Abort.serverError }
+  guard let headers = try drop.s3Signer?.authHeaderV4(httpMethod: .get, urlString: "https://s3.amazonaws.com/bucketName/testUploadImage.png", headers: [:], payload: .none),
+  let url = URL(string: "https://s3.amazonaws.com/bucketName/testUploadImage.png") else { throw Abort.serverError }
 
 var request = URLRequest(url: url)
 for header in headers {
@@ -79,7 +79,7 @@ request.httpMethod = HTTPMethod.get.rawValue
 #####V4 Pre-Signed URL
 
 ```ruby
- guard let presignedURL = try drop.s3Signer?.presignedURLV4(httpMethod: .get, urlString: "someS3_URL_String",
+ guard let presignedURL = try drop.s3Signer?.presignedURLV4(httpMethod: .get, urlString: "https://s3.amazonaws.com/bucketName/testUploadImage.png",
  expiration: TimeFromNow.oneHour, headers: [:]), let url = URL(string: presignedURL.urlString) else { throw Abort.serverError }
 
  var request = URLRequest(url: url)
