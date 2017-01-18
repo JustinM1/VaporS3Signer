@@ -57,27 +57,21 @@ VaporS3Signer makes it extremely easy to generate V4 auth headers and pre-signed
 #####V4 Auth Headers
 - All required headers for the request are created automatically, with the option to add more for individual use cases. 
 
+######Get
 ```ruby
 let drop = Droplet()
-
 try drop.addProvider(VaporS3Signer.Provider.self)
 
 drop.get("getS3TestImage") { req in
-
-  guard let headers = try drop.s3Signer?.authHeaderV4(httpMethod: .get, urlString: "https://s3.amazonaws.com/bucketName/testUploadImage.png", headers: [:], payload: .none),
-  let url = URL(string: "https://s3.amazonaws.com/bucketName/testUploadImage.png") else { throw Abort.serverError }
-
-var request = URLRequest(url: url)
-for header in headers {
-    request.addValue(header.value, forHTTPHeaderField: header.key)
-  }
-request.httpMethod = HTTPMethod.get.rawValue
-
-// execute request
-}
+let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketname/users/\(someUserId)")
+  guard let headers = try drop.s3Signer?.authHeaderV4(httpMethod: .get, urlString: urlString, headers: [:], payload: .none) else { throw Abort.serverError }
+  var vaporHeaders: [HeaderKey: String] = [:]
+  headers.forEach { vaporHeaders.updateValue($0.value, forKey: HeaderKey($0.key)) }
+  let resp = try self.drop.client.get(urlString, headers: vaporHeaders, query: [:]) 
+ }
 ```
-#####Using the droplet to post a new image
-- make sure to use Put when your making the headers and sending the request, that is what AWS expects when posting or updating an image.
+
+######PUT
 ```ruby
 drop.post("users/image") { req in
   let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketname/users/\(someUserId)")
@@ -85,25 +79,25 @@ drop.post("users/image") { req in
   var vaporHeaders: [HeaderKey: String] = [:]
   headers.forEach { vaporHeaders.updateValue($0.value, forKey: HeaderKey($0.key)) }
   let resp = try self.drop.client.put(urlString, headers: vaporHeaders, query: [:], body: Body(payload))
-  return try Response(status: .created, json: JSON(Node(node: ["imageURL": urlString])))
 }
 ```
 
 #####V4 Pre-Signed URL
 
+######Get
 ```ruby
- guard let presignedURL = try drop.s3Signer?.presignedURLV4(httpMethod: .get, urlString: "https://s3.amazonaws.com/bucketName/testUploadImage.png",
+let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketname/users/\(someUserId)")
+ guard let presignedURL = try drop.s3Signer?.presignedURLV4(httpMethod: .get, urlString: urlString,
  expiration: TimeFromNow.oneHour, headers: [:]), let url = URL(string: presignedURL.urlString) else { throw Abort.serverError }
-
- var request = URLRequest(url: url)
-    for header in presignedURL.headers {
-        request.setValue(header.value, forHTTPHeaderField: header.key)
-  }
-request.httpMethod = HTTPMethod.get.rawValue
-
-// execute request
+let resp = try self.drop.client.get(preSignedURL.urlString, headers: [:], query: [:])
 ```
-
+######PUT
+```ruby
+drop.post("user/images") { req in
+ guard let payload = req.body.bytes, let preSignedURL = try self.drop.s3Signer?.presignedURLV4(httpMethod: .put, urlString: urlString, expiration: .thirtyMinutes, headers: [:]) else { throw Abort.badReqest }
+ let resp = try self.drop.client.put(preSignedURL.urlString, headers: [:], query: [:], body: Body(payload))
+}
+```
 * `TimeFromNow` has three default lengths, `30 minutes, 1 hour, and 3 hours`. There is also a custom option which takes `Seconds`: `typealias for Int`.
 
 ###Motivation
