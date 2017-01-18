@@ -80,7 +80,7 @@ request.httpMethod = HTTPMethod.get.rawValue
 - make sure to use Put when your making the headers and sending the request, that is what AWS expects when posting or updating an image.
 ```ruby
 drop.post("users/image") { req in
-  let urlString = "https://" + Region.usEast1_Virginia.host.appending("/users/\(someUserId)")
+  let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketname/users/\(someUserId)")
   guard let payload = req.body.bytes, let headers = try self.drop.s3Signer?.authHeaderV4(httpMethod: .put, urlString: urlString, headers: [:], payload: Payload.bytes(payload)) else { throw Abort.serverError }
   var vaporHeaders: [HeaderKey: String] = [:]
   headers.forEach { vaporHeaders.updateValue($0.value, forKey: HeaderKey($0.key)) }
