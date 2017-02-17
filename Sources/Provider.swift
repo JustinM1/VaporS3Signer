@@ -7,8 +7,8 @@ public final class Provider: Vapor.Provider {
     
     public var s3Signer: S3SignerAWS
     
-    public init(accessKey: String, secretKey: String, region: Region) {
-        self.s3Signer = S3SignerAWS(accessKey: accessKey, secretKey: secretKey, region: region)
+    public init(accessKey: String, secretKey: String, region: Region, securityToken: String? = nil) {
+        self.s3Signer = S3SignerAWS(accessKey: accessKey, secretKey: secretKey, region: region, securityToken: securityToken)
     }
     
     public convenience init(config: Config) throws {
@@ -30,8 +30,10 @@ public final class Provider: Vapor.Provider {
         guard let regionEnum = Region(rawValue: region) else {
             throw S3ProviderError.config("region name does not conform to any Region raw values. Check Region.swift for proper names.")
         }
+
+        let token = vaporS3["securityToken"]?.string
         
-        self.init(accessKey: accessKey, secretKey: secretKey, region: regionEnum)
+        self.init(accessKey: accessKey, secretKey: secretKey, region: regionEnum, securityToken: token)
 
     }
     
