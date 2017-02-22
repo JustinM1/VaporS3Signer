@@ -15,7 +15,7 @@ Generates authorization headers and pre-signed URLs for authenticating AWS S3 RE
 
 - Add `vapor-S3Signer.json` file to your Config/secrets folder.
 
-The `vapor-S3Signer.json` file should contain your access key, secret key, and the region of your bucket. You can also include a temporary token for EC2 instance.
+The `vapor-S3Signer.json` file should contain your access key, secret key, and the region of your bucket. You can also include a temporary token for EC2 instance which is optional.
 
 Ex.
 ```ruby
