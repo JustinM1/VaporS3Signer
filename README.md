@@ -5,13 +5,13 @@
 Generates authorization headers and pre-signed URLs for authenticating AWS S3 REST API requests
 * Supports `GET, PUT, DELETE`
 
- ###Installation (SPM)
+### Installation (SPM)
 
 ```ruby
 .Package(url: "https://github.com/JustinM1/VaporS3Signer.git", majorVersion: 1)
  ```
 
-###Config File
+### Config File
 
 - Add `vapor-S3Signer.json` file to your Config/secrets folder.
 
@@ -50,15 +50,15 @@ Here are the names for each region:
 
 * SA East 1 = `"sa-east-1"`
 
-###Usage
+### Usage
 **Note:** Check [S3SignerAWS-README.md](https://github.com/JustinM1/S3SignerAWS/blob/master/README.md) for a detailed explanation on usage and capabilities.
 
 VaporS3Signer makes it extremely easy to generate V4 auth headers and pre-signed URLs by adding an extension to `Droplet`.
 
-#####V4 Auth Headers
+##### V4 Auth Headers
 - All required headers for the request are created automatically, with the option to add more for individual use cases. 
 
-######Get
+###### Get
 ```ruby
 let drop = Droplet()
 try drop.addProvider(VaporS3Signer.Provider.self)
@@ -72,7 +72,7 @@ let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketnam
  }
 ```
 
-######PUT
+###### PUT
 ```ruby
 drop.post("users/image") { req in
   let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketname/users/\(someUserId)")
@@ -83,16 +83,16 @@ drop.post("users/image") { req in
 }
 ```
 
-#####V4 Pre-Signed URL
+##### V4 Pre-Signed URL
 
-######Get
+###### Get
 ```ruby
 let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketname/users/\(someUserId)")
  guard let presignedURL = try drop.s3Signer?.presignedURLV4(httpMethod: .get, urlString: urlString,
  expiration: TimeFromNow.oneHour, headers: [:]), let url = URL(string: presignedURL.urlString) else { throw Abort.serverError }
 let resp = try self.drop.client.get(preSignedURL.urlString, headers: [:], query: [:])
 ```
-######PUT
+###### PUT
 ```ruby
 drop.post("user/images") { req in
  guard let payload = req.body.bytes, let preSignedURL = try self.drop.s3Signer?.presignedURLV4(httpMethod: .put, urlString: urlString, expiration: .thirtyMinutes, headers: [:]) else { throw Abort.badReqest }
@@ -101,10 +101,10 @@ drop.post("user/images") { req in
 ```
 * `TimeFromNow` has three default lengths, `30 minutes, 1 hour, and 3 hours`. There is also a custom option which takes `Seconds`: `typealias for Int`.
 
-###Motivation
+### Motivation
 
 Found it quite painful to satisfy AWS S3 auth requirements, hoping to save others from some of that pain and suffering. Enjoy!
 
-###Acknowledgements
+### Acknowledgements
 
 Thanks [Tanner Nelson](https://github.com/tannernelson), [Logan Wright](https://github.com/LoganWright) and everyone in the [Vapor Slack Channel](http://vapor.team/)
