@@ -5,7 +5,7 @@ let package = Package(
     targets: [],
     dependencies: [
         .Package(url: "https://github.com/JustinM1/S3SignerAWS.git",
-                 majorVersion: 1),
-        .Package(url: "https://github.com/vapor/vapor.git", majorVersion: 1)
+                 majorVersion: 2),
+        .Package(url: "https://github.com/vapor/vapor.git", Version(2,0,0, prereleaseIdentifiers: ["beta"]))
     ]
 )

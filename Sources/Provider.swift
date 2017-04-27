@@ -5,7 +5,9 @@ import HTTP
 
 public final class Provider: Vapor.Provider {
     
-    public var s3Signer: S3SignerAWS
+  public static let repositoryName: String = "vapor-s3-signer"
+  
+  public var s3Signer: S3SignerAWS
     
     public init(accessKey: String, secretKey: String, region: Region, securityToken: String? = nil) {
         self.s3Signer = S3SignerAWS(accessKey: accessKey, secretKey: secretKey, region: region, securityToken: securityToken)
@@ -36,14 +38,15 @@ public final class Provider: Vapor.Provider {
         self.init(accessKey: accessKey, secretKey: secretKey, region: regionEnum, securityToken: token)
 
     }
-    
-    public func beforeRun(_: Droplet) {
-        
-    }
-    
-    public func afterInit(_ drop: Droplet) {
-        drop.storage["s3Signer"] = self.s3Signer
-    }
+  
+  
+  public func boot(_ config: Config) throws {}
+  
+  public func boot(_ droplet: Droplet) throws {
+    droplet.storage["s3Signer"] = self.s3Signer
+  }
+  
+  public func beforeRun(_ droplet: Droplet) throws { }
     
     public enum S3ProviderError: Swift.Error {
         case config(String)
