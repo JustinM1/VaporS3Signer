@@ -6,9 +6,13 @@ Generates authorization headers and pre-signed URLs for authenticating AWS S3 RE
 * Supports `GET, PUT, DELETE`
 
 ### Installation (SPM)
-
+ - Vapor Version 1
 ```ruby
 .Package(url: "https://github.com/JustinM1/VaporS3Signer.git", majorVersion: 1)
+ ```
+ - Vapor Version 2
+ ```ruby
+.Package(url: "https://github.com/JustinM1/VaporS3Signer.git", majorVersion: 2)
  ```
 
 ### Config File
