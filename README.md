@@ -2,17 +2,12 @@
 
 [Vapor](https://vapor.codes/) Provider for [S3SignerAWS](https://github.com/JustinM1/S3SignerAWS)
 
-Generates authorization headers and pre-signed URLs for authenticating AWS S3 REST API requests
-* Supports `GET, PUT, DELETE`
+Generates V4 authorization headers and pre-signed URLs for authenticating AWS S3 REST API requests
+* Supports `DELETE/GET/HEAD/POST/PUT`
 
 ### Installation (SPM)
- - Vapor Version 1
-```ruby
-.Package(url: "https://github.com/JustinM1/VaporS3Signer.git", majorVersion: 1)
- ```
- - Vapor Version 2
  ```ruby
-.Package(url: "https://github.com/JustinM1/VaporS3Signer.git", majorVersion: 2)
+.Package(url: "https://github.com/JustinM1/VaporS3Signer.git", majorVersion: 3)
  ```
 
 ### Config File
@@ -60,19 +55,22 @@ Here are the names for each region:
 VaporS3Signer makes it extremely easy to generate V4 auth headers and pre-signed URLs by adding an extension to `Droplet`.
 
 ##### V4 Auth Headers
-- All required headers for the request are created automatically, with the option to add more for individual use cases. 
+- All required headers for the request are created automatically, with the option to add more for individual use cases.
 
 ###### Get
 ```ruby
-let drop = Droplet()
-try drop.addProvider(VaporS3Signer.Provider.self)
-
 drop.get("getS3TestImage") { req in
 let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketname/users/\(someUserId)")
-  guard let headers = try drop.s3Signer?.authHeaderV4(httpMethod: .get, urlString: urlString, headers: [:], payload: .none) else { throw Abort.serverError }
-  var vaporHeaders: [HeaderKey: String] = [:]
-  headers.forEach { vaporHeaders.updateValue($0.value, forKey: HeaderKey($0.key)) }
-  let resp = try self.drop.client.get(urlString, headers: vaporHeaders, query: [:]) 
+
+  guard let headers = try drop.s3Signer?.authHeaderV4(
+    httpMethod: .get,
+    urlString: urlString,
+    headers: [:],
+    payload: .none) else { throw Abort.serverError }
+
+  let vaporHeaders = headers.vaporHeaders
+
+  let resp = try self.drop.client.get(urlString, headers: vaporHeaders, query: [:])
  }
 ```
 
@@ -80,10 +78,20 @@ let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketnam
 ```ruby
 drop.post("users/image") { req in
   let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketname/users/\(someUserId)")
-  guard let payload = req.body.bytes, let headers = try self.drop.s3Signer?.authHeaderV4(httpMethod: .put, urlString: urlString, headers: [:], payload: Payload.bytes(payload)) else { throw Abort.serverError }
-  var vaporHeaders: [HeaderKey: String] = [:]
-  headers.forEach { vaporHeaders.updateValue($0.value, forKey: HeaderKey($0.key)) }
-  let resp = try self.drop.client.put(urlString, headers: vaporHeaders, query: [:], body: Body(payload))
+
+  guard let payload = req.body.bytes,
+  let headers = try self.drop.s3Signer?.authHeaderV4(
+    httpMethod: .put,
+    urlString: urlString,
+    headers: [:],
+    payload: Payload.bytes(payload)) else { throw Abort.serverError }
+
+  let vaporHeaders = headers.vaporHeaders
+
+  let resp = try self.drop.client.put(
+    urlString, headers:
+    vaporHeaders, query: [:],
+    body: Body(payload))
 }
 ```
 
@@ -92,23 +100,33 @@ drop.post("users/image") { req in
 ###### Get
 ```ruby
 let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketname/users/\(someUserId)")
- guard let presignedURL = try drop.s3Signer?.presignedURLV4(httpMethod: .get, urlString: urlString,
- expiration: TimeFromNow.oneHour, headers: [:]), let url = URL(string: presignedURL.urlString) else { throw Abort.serverError }
-let resp = try self.drop.client.get(preSignedURL.urlString, headers: [:], query: [:])
+
+guard let presignedURLString = try drop.s3Signer?.presignedURLV4(
+   httpMethod: .get,
+   urlString: urlString,
+   expiration: TimeFromNow.oneHour,
+   headers: [:]) else { throw Abort.serverError }
+
+let resp = try self.drop.client.get(
+  preSignedURLString,
+  headers: [:],
+  query: [:])
 ```
 ###### PUT
 ```ruby
-drop.post("user/images") { req in
- guard let payload = req.body.bytes, let preSignedURL = try self.drop.s3Signer?.presignedURLV4(httpMethod: .put, urlString: urlString, expiration: .thirtyMinutes, headers: [:]) else { throw Abort.badReqest }
- let resp = try self.drop.client.put(preSignedURL.urlString, headers: [:], query: [:], body: Body(payload))
-}
+ let urlString = "https://" + Region.usEast1_Virginia.host.appending("S3bucketname/users/\(someUserId)")
+
+ guard let payload = req.body.bytes,
+ let preSignedURLString = try self.drop.s3Signer?.presignedURLV4(
+   httpMethod: .put,
+   urlString: urlString,
+   expiration: .thirtyMinutes,
+   headers: [:]) else { throw Abort.badReqest }
+
+ let resp = try self.drop.client.put(
+   preSignedURLString,
+   headers: [:],
+   query: [:],
+   body: Body(payload))
 ```
 * `TimeFromNow` has three default lengths, `30 minutes, 1 hour, and 3 hours`. There is also a custom option which takes `Seconds`: `typealias for Int`.
-
-### Motivation
-
-Found it quite painful to satisfy AWS S3 auth requirements, hoping to save others from some of that pain and suffering. Enjoy!
-
-### Acknowledgements
-
-Thanks [Tanner Nelson](https://github.com/tannernelson), [Logan Wright](https://github.com/LoganWright) and everyone in the [Vapor Slack Channel](http://vapor.team/)
