@@ -26,6 +26,9 @@ Ex.
 }
 ```
 Here are the names for each region:
+##### CA
+* Canada (Central) = `"ca-central-1"`
+
 ##### US
 * US East 1 Virginia = `"us-east-1"`
 * US East 2 Ohio = `"us-east-2"`
@@ -35,6 +38,7 @@ Here are the names for each region:
 ##### EU
 
 * EU West 1 = `"eu-west-1"`
+* EU West 2 = `"eu-west-2"`
 * EU Central 1 = `"eu-central-1"`
 
 ##### AP
