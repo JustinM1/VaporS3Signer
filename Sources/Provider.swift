@@ -2,55 +2,49 @@ import Vapor
 import S3SignerAWS
 import HTTP
 
-public final class Provider: Vapor.Provider {
- 
-	private static let configFileName: String = "vapor-S3Signer"
-	public static let repositoryName: String = "vapor-S3Signer"
-	
-	public var s3Signer: S3SignerAWS
-	
-	public init(accessKey: String, secretKey: String, region: Region, securityToken: String? = nil) {
-		self.s3Signer = S3SignerAWS(accessKey: accessKey, secretKey: secretKey, region: region, securityToken: securityToken)
-	}
-	
-	public convenience init(config: Config) throws {
-		
-		guard config[Provider.configFileName] != nil else {
-			throw S3ProviderError.config("no vapor-S3Signer.json config file")
-		}
-		
-		guard let accessKey = config[Provider.configFileName, "accessKey"]?.string else {
-			throw S3ProviderError.config("No 'accessKey' key in vapor-S3Signer.json config file.")
-		}
-		
-		guard let secretKey = config[Provider.configFileName, "secretKey"]?.string else {
-			throw S3ProviderError.config("No 'secretKey' key in vapor-S3Signer.json config file.")
-		}
-		
-		guard let region = config[Provider.configFileName, "region"]?.string else {
-			throw S3ProviderError.config("No 'region' key in vapor-S3Signer.json config file.")
-		}
-		
-		guard let regionEnum = Region(rawValue: region) else {
-			throw S3ProviderError.config("region name does not conform to any Region raw values. Check Region.swift for proper names.")
-		}
-		
-		let token = config[Provider.configFileName, "securityToken"]?.string
-		
-		self.init(accessKey: accessKey, secretKey: secretKey, region: regionEnum, securityToken: token)
-	}
-	
-	public func beforeRun(_ droplet: Droplet) throws { }
-	
-	public func boot(_ config: Config) throws { }
-	
-	public func boot(_ droplet: Droplet) throws {
-		droplet.storage["s3Signer"] = self.s3Signer
-	}
-	
-	public enum S3ProviderError: Swift.Error {
-		case config(String)
-	}
+public struct VaporS3SignerConfig: Service {
+
+    enum ConfigError: Error {
+        case invalidRegion
+    }
+
+    public let accessKey: String
+    public let secretKey: String
+    public let region: Region
+    public let securityToken: String?
+
+    public init(accessKey: String, secretKey: String, region: String, securityToken: String?) throws {
+        guard let regionEnum = Region(rawValue: region) else {
+            throw ConfigError.invalidRegion
+        }
+
+        self.accessKey = accessKey
+        self.secretKey = secretKey
+        self.region = regionEnum
+        self.securityToken = securityToken
+    }
+}
+
+extension S3SignerAWS: Service {}
+
+public final class VaporS3SignerProvider: Provider {
+    public func register(_ services: inout Services) throws {
+        services.register { container -> S3SignerAWS in
+            let config = try container.make(VaporS3SignerConfig.self)
+            return S3SignerAWS(accessKey: config.accessKey, secretKey: config.secretKey, region: config.region, securityToken: config.securityToken)
+        }
+    }
+
+    public func didBoot(_ container: Container) throws -> EventLoopFuture<Void> {
+        return .done(on: container)
+    }
+}
+
+extension Container {
+
+    func s3Signer() throws -> S3SignerAWS {
+        return try make()
+    }
 }
 
 
